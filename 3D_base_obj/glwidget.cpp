@@ -4,7 +4,7 @@
 #include <QtWidgets>
 #include <QtOpenGL>
 
-#include <gl/GLU.h>
+#include <GL/glu.h>
 
 #include <math.h>
 

@@ -20,3 +20,5 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     glwidget.h \
     objhelper.h
+
+LIBS += -lglut -lGLU

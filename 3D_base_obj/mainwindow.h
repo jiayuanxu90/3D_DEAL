@@ -19,7 +19,7 @@ protected:
     void keyPressEvent(QKeyEvent * e);
 
 private:
-    bool fs = false;
+    bool fs;
 
     GLWidget * glwidget;
 
