@@ -3,7 +3,9 @@
 #include <QtWidgets>
 #include <QtOpenGL>
 
-#include <gl/GLU.h>
+//#include <gl/GLU.h>
+#include <GL/glu.h>
+#include <GL/gl.h>
 
 #include <math.h>
 
@@ -171,6 +173,7 @@ void GLWidget::resizeGL(int width, int height)
     glViewport(0, 0, (GLint)width, (GLint)height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+
     gluPerspective(45.0, (GLfloat)width/(GLfloat)height, 0.1, 100.0);
     //glOrtho(-0.5, +0.5, -0.5, +0.5, 4.0, 15.0);
     glMatrixMode(GL_MODELVIEW);

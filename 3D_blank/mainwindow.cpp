@@ -17,6 +17,7 @@
 
 MainWindow::MainWindow()
 {
+    fs = false;
     switch (QMessageBox::information(0,
         "Start in fullscreen?",
         "Would you like to run this program in fullscreen mode?",
