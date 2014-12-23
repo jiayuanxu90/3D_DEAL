@@ -5,7 +5,6 @@
 
 //#include <gl/GLU.h>
 #include <GL/glu.h>
-#include <GL/gl.h>
 
 #include <math.h>
 

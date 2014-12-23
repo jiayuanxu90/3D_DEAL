@@ -18,3 +18,5 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     glwidget.h
+
+LIBS += -lglut -lGLU
