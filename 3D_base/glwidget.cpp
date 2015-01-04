@@ -1,6 +1,7 @@
 #include "glwidget.h"
-#include "objhelper.h"
-
+#include "objimpl.h"
+#include "modelintf.h"
+#include "model.h"
 #include <QtWidgets>
 #include <QtOpenGL>
 
@@ -8,8 +9,7 @@
 
 #include <math.h>
 
-#include <iostream>
-using namespace std;
+
 
 GLWidget::GLWidget(QWidget * parent) :
     QGLWidget(parent)
@@ -25,7 +25,9 @@ GLWidget::GLWidget(QWidget * parent) :
     qtPurple = QColor::fromCmykF(0.39, 0.39, 0.0, 0.0);
 
     setMinimumSize(400, 400);
-    oh = NULL;
+
+    model = NULL;
+    //model = NULL;
     //makeObject("C:/Users/Tree/Desktop/models_oo/bunny.obj");
 }
 
@@ -37,9 +39,9 @@ GLWidget::~GLWidget()
 void GLWidget::setScaling(int scale)
 {
     if (scale > 50)
-        m_fScale = 1.0f + (GLfloat(scale-50))/50*1.0;
+        m_fScale = 1.0f + (GLfloat(scale-50))/50*0.5;
     else if (scale < 50)
-        m_fScale = 1.0f - (GLfloat(50-scale))/50*1.0;
+        m_fScale = 1.0f - (GLfloat(50-scale))/50*0.5;
     else
         m_fScale = 1;
     updateGL();
@@ -88,7 +90,7 @@ void GLWidget::setZRotation(int angle)
 void GLWidget::openFile()
 {
     //QTextStream qsout(stdout, QIODevice::WriteOnly);
-    QString fileName = QFileDialog::getOpenFileName(this, tr("open file"), "../../models/", tr("Allfile(*.*);;objfile(*.obj)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("open file"), "C:/Users/Tree/Desktop/M" , tr("Allfile(*.*);;objfile(*.obj)"));
     makeObject(fileName);
 
 }
@@ -124,31 +126,44 @@ void GLWidget::initializeGL()
 void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GLfloat range = 0.0f;
+
     glLoadIdentity();
-    glTranslatef(0.0, 0.0, -1.0);
+    if (model==NULL || model->empty()) {
+        range = 0.0f;
+    } else {
+        range = model->range;
+    }
+    if (range == 0.0f) {
+        glTranslatef(0.0f, 0.0f, -1.0f);
+    } else {
+        glTranslatef(-model->x_trans/range, -model->y_trans/range, -model->z_trans/range-1.0);
+    }
+
+
     glRotatef(xRot / 16.0, 1.0, 0.0, 0.0);
     glRotatef(yRot / 16.0, 0.0, 1.0, 0.0);
     glRotatef(zRot / 16.0, 0.0, 0.0, 1.0);
 
     glScalef(m_fScale, m_fScale, m_fScale);
 
-    if (oh!=NULL && !oh->faces.empty()) {
 
+    if (model!=NULL && !model->empty()) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBegin(GL_TRIANGLES);
-        for (int i=0; i<oh->faces.size(); ++i) {
-            glVertex3f(oh->vertices.at(oh->faces.at(i).point1)[0],
-                    oh->vertices.at(oh->faces.at(i).point1)[1],
-                    oh->vertices.at(oh->faces.at(i).point1)[2]);
-            glVertex3f(oh->vertices.at(oh->faces.at(i).point2)[0],
-                    oh->vertices.at(oh->faces.at(i).point2)[1],
-                    oh->vertices.at(oh->faces.at(i).point2)[2]);
-            glVertex3f(oh->vertices.at(oh->faces.at(i).point3)[0],
-                    oh->vertices.at(oh->faces.at(i).point3)[1],
-                    oh->vertices.at(oh->faces.at(i).point3)[2]);
+        for (int i=0; i<model->node_size(); ++i) {
+            if (!model->normal_indices.empty() && model->normal_indices.size()!=0) {
+                glNormal3f(model->vertices_normals.at(model->normal_indices.at(i)).x()/range,
+                           model->vertices_normals.at(model->normal_indices.at(i)).y()/range,
+                           model->vertices_normals.at(model->normal_indices.at(i)).z()/range);
+            }
+            glVertex3f(model->vertices.at(model->vertex_indices.at(i)).x()/range,
+                       model->vertices.at(model->vertex_indices.at(i)).y()/range,
+                       model->vertices.at(model->vertex_indices.at(i)).z()/range);
         }
         glEnd();
     }
+        //model->draw(xRot, yRot, zRot, m_fScale);
 }
 
 void GLWidget::resizeGL(int width, int height)
@@ -170,11 +185,16 @@ void GLWidget::resizeGL(int width, int height)
 
 void GLWidget::makeObject(QString filename)
 {
-    if (oh != NULL) {
-        oh->~ObjHelper();
-        oh = NULL;
+    if (filename.endsWith(".obj")) {
+        if (model != NULL) {
+            model->~Model();
+            model = NULL;
+        }
+        model_intf = new ObjImpl(filename, model);
     }
-    oh = new ObjHelper(filename);
+    else {
+        QMessageBox::about(this, "Message", "This format is not supported! Please try again...");
+    }
 }
 
 
