@@ -16,7 +16,6 @@ ObjImpl::~ObjImpl()
 
 bool ObjImpl::read_file(QString str, Model * &model)
 {
-    model = new Model();
     QFile file(str);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "*** Can not open the file! File location is \""
@@ -24,6 +23,7 @@ bool ObjImpl::read_file(QString str, Model * &model)
         return false;
     }
     else {
+        model = new Model();
         QTextStream infile(&file);
         while (!infile.atEnd()) {
             QString line = infile.readLine();
@@ -43,11 +43,13 @@ bool ObjImpl::read_file(QString str, Model * &model)
                 deal_with_f(sin, model);
             }
         }
+
         model->set_poroperties();
+        model->display_for_test();
+
+        return true;
     }
 
-    model->display_for_test();
-    return true;
 }
 
 

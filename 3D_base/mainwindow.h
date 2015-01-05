@@ -18,6 +18,9 @@ public:
 protected:
     void keyPressEvent(QKeyEvent * e);
 
+public slots:
+    void about();
+
 private:
     bool fs = false;
 

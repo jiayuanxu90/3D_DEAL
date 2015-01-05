@@ -77,14 +77,14 @@ MainWindow::MainWindow()
 
     QAction * openFile = new QAction("Open", fileMenu);
     QAction * exit = new QAction("Exit", fileMenu);
-    QAction * aboutQt = new QAction("About QT", helpMenu);
+    QAction * aboutQt = new QAction("About", helpMenu);
 
     fileMenu->addAction(openFile);
     fileMenu->addAction(exit);
     helpMenu->addAction(aboutQt);
 
     QObject::connect(exit, SIGNAL(triggered(bool)), this, SLOT(close()));
-    QObject::connect(aboutQt, SIGNAL(triggered(bool)), qApp, SLOT(aboutQt()));
+    QObject::connect(aboutQt, SIGNAL(triggered(bool)), this, SLOT(about()));
     QObject::connect(openFile, SIGNAL(triggered(bool)), glwidget, SLOT(openFile()));
 
 
@@ -139,4 +139,10 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
     default:
         break;
     }
+}
+
+void MainWindow::about()
+{
+    QMessageBox::about(this, "About", "This is a Qt app dealing with 3D mesh.\n"
+                                      "                      @Author: jiayuan_xu\n");
 }

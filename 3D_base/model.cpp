@@ -7,6 +7,7 @@ Model::Model()
     vertices.append(QVector3D(0, 0, 0));
     vertices_normals.append(QVector3D(0, 0, 0));
     vertices_texture.append(QVector2D(0, 0));
+    vertices_rgbs.append(QVector3D(0, 0, 0));
     range = 0.0f;
     x_trans = 0.0f;
     y_trans = 0.0f;
@@ -21,6 +22,7 @@ Model::~Model()
     vertex_indices.clear();
     vt_indices.clear();
     normal_indices.clear();
+    vrgb_indices.clear();
 }
 
 bool Model::empty() const
@@ -57,6 +59,11 @@ QVector3D Model::add_vertex_normal(GLfloat x, GLfloat y, GLfloat z)
     return vertices_normals.at(vertices_normals.size()-1);
 }
 
+QVector3D Model::add_vertex_rgb(GLint x, GLint y, GLint z)
+{
+    vertices_rgbs.push_back(QVector3D(x, y, z));
+    return vertices_rgbs.at(vertices_rgbs.size()-1);
+}
 
 
 void Model::add_v_index(unsigned int vi)
@@ -74,6 +81,10 @@ void Model::add_n_index(unsigned int ni)
     normal_indices.push_back(ni);
 }
 
+void Model::add_vrgb_index(unsigned int rgbi)
+{
+    vrgb_indices.push_back(rgbi);
+}
 
 void Model::set_poroperties()
 {
@@ -138,6 +149,13 @@ void Model::display_for_test() const
                  << vertices_normals.at(i).z() << endl;
     }
 
+    qDebug() << "v_rgb: -----------------" << endl;
+    for (int i=0; i<vertices_rgbs.size() && i<10; ++i) {
+        qDebug() << vertices_rgbs.at(i).x() << " "
+                 << vertices_rgbs.at(i).y() << " "
+                 << vertices_rgbs.at(i).z() << endl;
+    }
+
     qDebug() << "index of v: --------------------" << endl;
     for (int i=0; i<vertex_indices.size() && i<30;) {
         qDebug() << vertex_indices.at(i) << " "
@@ -159,6 +177,14 @@ void Model::display_for_test() const
         qDebug() << normal_indices.at(i) << " "
                  << normal_indices.at(i+1) << " "
                  << normal_indices.at(1+2) << endl;
+        i += 3;
+    }
+
+    qDebug() << "index of v_rgb: ------------------" << endl;
+    for (int i=0; i<vrgb_indices.size() && i<30;) {
+        qDebug() << vrgb_indices.at(i) << " "
+                 << vrgb_indices.at(i+1) << " "
+                 << vrgb_indices.at(1+2) << endl;
         i += 3;
     }
 

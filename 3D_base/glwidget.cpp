@@ -1,5 +1,6 @@
 #include "glwidget.h"
 #include "objimpl.h"
+#include "plyimpl.h"
 #include "modelintf.h"
 #include "model.h"
 #include <QtWidgets>
@@ -191,6 +192,13 @@ void GLWidget::makeObject(QString filename)
             model = NULL;
         }
         model_intf = new ObjImpl(filename, model);
+    }
+    else if (filename.endsWith(".ply")) {
+        if (model != NULL) {
+            model->~Model();
+            model = NULL;
+        }
+        model_intf = new PlyImpl(filename, model);
     }
     else {
         QMessageBox::about(this, "Message", "This format is not supported! Please try again...");

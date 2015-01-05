@@ -17,10 +17,12 @@ SOURCES += main.cpp\
     glwidget.cpp \
     model.cpp \
     modelintf.cpp \
-    objimpl.cpp
+    objimpl.cpp \
+    plyimpl.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
     model.h \
     modelintf.h \
-    objimpl.h
+    objimpl.h \
+    plyimpl.h
