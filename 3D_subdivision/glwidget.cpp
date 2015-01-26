@@ -3,12 +3,14 @@
 #include "fdply.h"
 #include "filedispose.h"
 #include "model.h"
+#include "meshdispose.h"
 #include <QtWidgets>
 #include <QtOpenGL>
 
 #include <gl/GLU.h>
 
 #include <math.h>
+#include <QDebug>
 
 
 
@@ -28,6 +30,9 @@ GLWidget::GLWidget(QWidget * parent) :
     setMinimumSize(400, 400);
 
     model = NULL;
+    halfEdge = NULL;
+
+    mesh_dispose = new MeshDispose();
 }
 
 GLWidget::~GLWidget()
@@ -98,6 +103,17 @@ void GLWidget::openFile()
 
 }
 
+void GLWidget::subdivideButterfly()
+{
+    if (model == NULL) {
+        QMessageBox::about(this, "Message", "Please choose a mesh first...");
+    }
+    else {
+        mesh_dispose->subdivision_butterfly(halfEdge, model);
+        updateGL();
+    }
+}
+
 QSize GLWidget::minimumSizeHint() const
 {
     return QSize(50, 50);
@@ -155,18 +171,18 @@ void GLWidget::paintGL()
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBegin(GL_TRIANGLES);
         for (int i=0; i<model->node_size(); ++i) {
-            if (!model->normal_indices.empty() && model->normal_indices.size()!=0) {
-                glNormal3f(model->vn_array.at(model->normal_indices.at(i)).x(),
-                           model->vn_array.at(model->normal_indices.at(i)).y(),
-                           model->vn_array.at(model->normal_indices.at(i)).z());
-            }
+//            if (!model->normal_indices.empty() && model->normal_indices.size()!=0) {
+//                glNormal3f(model->vn_array.at(model->normal_indices.at(i)).x(),
+//                           model->vn_array.at(model->normal_indices.at(i)).y(),
+//                           model->vn_array.at(model->normal_indices.at(i)).z());
+//            }
             glVertex3f(model->v_array.at(model->vertex_indices.at(i)).x(),
                        model->v_array.at(model->vertex_indices.at(i)).y(),
                        model->v_array.at(model->vertex_indices.at(i)).z());
         }
         glEnd();
+
     }
-        //model->draw(xRot, yRot, zRot, m_fScale);
 }
 
 void GLWidget::resizeGL(int width, int height)
@@ -205,6 +221,13 @@ void GLWidget::makeObject(QString filename)
     else {
         QMessageBox::about(this, "Message", "This format is not supported! Please try again...");
     }
+
+    if (halfEdge != NULL) {
+        halfEdge->~HalfEdge();
+    }
+    halfEdge = new HalfEdge();
+    halfEdge->construct_halfedge_sturcture(model->vertex_indices);
+
 }
 
 

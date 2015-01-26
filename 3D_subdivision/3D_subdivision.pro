@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     filedispose.cpp \
     fdobj.cpp \
     fdply.cpp \
-    meshdispose.cpp
+    meshdispose.cpp \
+    halfedge.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -27,4 +28,5 @@ HEADERS  += mainwindow.h \
     filedispose.h \
     fdobj.h \
     fdply.h \
-    meshdispose.h
+    meshdispose.h \
+    halfedge.h

@@ -4,6 +4,8 @@
 #include <QGLWidget>
 #include "model.h"
 #include "filedispose.h"
+#include "halfedge.h"
+#include "meshdispose.h"
 
 
 class GLWidget : public QGLWidget
@@ -29,6 +31,8 @@ public slots:
 
     void openFile();
 
+    void subdivideButterfly();
+
 protected:
     void initializeGL();
     void paintGL();
@@ -50,6 +54,10 @@ private:
     //ModelIntf * model_intf;
     Model * model;
     FileDispose * file_dispose;
+
+    HalfEdge * halfEdge;
+
+    MeshDispose * mesh_dispose;
 
     void normalizeAngle(int & angle);
     void makeObject(QString filename);
