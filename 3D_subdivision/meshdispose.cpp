@@ -24,9 +24,9 @@ bool MeshDispose::subdivision_butterfly(HalfEdge *&halfEdge, Model *&model)
     model->vertex_indices.clear();
 
     for (int i=0; i<origin_size; ++i) {
-        edge_subdivide(current->e1, model);
-        edge_subdivide(current->e2, model);
-        edge_subdivide(current->e3, model);
+        edge_subdivide_butterfly(current->e1, model);
+        edge_subdivide_butterfly(current->e2, model);
+        edge_subdivide_butterfly(current->e3, model);
 
         face_subdivide_to_four(current, halfEdge, model);
 
@@ -36,7 +36,31 @@ bool MeshDispose::subdivision_butterfly(HalfEdge *&halfEdge, Model *&model)
     return true;
 }
 
-void MeshDispose::edge_subdivide(Edge *&current, Model *&model)
+bool MeshDispose::subdivision_loop_revision(HalfEdge *&halfEdge, Model *&model)
+{
+    if (halfEdge->is_empty() || model->empty()) {
+        return false;
+    }
+
+    Face * current = halfEdge->get_first();
+    int origin_size = halfEdge->get_size();
+    model->vertex_indices.clear();
+
+    for (int i=0; i<origin_size; ++i) {
+        edge_subdivide_loop_revision(current->e1, model);
+        edge_subdivide_loop_revision(current->e2, model);
+        edge_subdivide_loop_revision(current->e3, model);
+
+        face_subdivide_to_four(current, halfEdge, model);
+
+        current = current->next;
+    }
+
+    return true;
+}
+
+
+void MeshDispose::edge_subdivide_butterfly(Edge *&current, Model *&model)
 {
     if (current->flag == UNSUBDIVIDED) {
         QVector3D v1, v2, v3, v4, q1, q2, q3, q4;
@@ -135,6 +159,61 @@ void MeshDispose::edge_subdivide(Edge *&current, Model *&model)
 
 }
 
+void MeshDispose::edge_subdivide_loop_revision(Edge *&current, Model *&model)
+{
+    if (current->flag == UNSUBDIVIDED) {
+        QVector3D v1, v2, v3, v4;
+        unsigned int i_v1 = current->data.x();
+        v1.setX(model->v_array.at(i_v1).x());
+        v1.setY(model->v_array.at(i_v1).y());
+        v1.setZ(model->v_array.at(i_v1).z());
+
+        unsigned int i_v2 = current->data.y();
+        v2.setX(model->v_array.at(i_v2).x());
+        v2.setY(model->v_array.at(i_v2).y());
+        v2.setZ(model->v_array.at(i_v2).z());
+
+        unsigned int i_v3 = current->next->data.y();
+        v3.setX(model->v_array.at(i_v3).x());
+        v3.setY(model->v_array.at(i_v3).y());
+        v3.setZ(model->v_array.at(i_v3).z());
+        Edge * edge_rev = current->reverse;
+        if (edge_rev != NULL) {
+            unsigned int i_v4 = edge_rev->next->data.y();
+            v4.setX(model->v_array.at(i_v4).x());
+            v4.setY(model->v_array.at(i_v4).y());
+            v4.setZ(model->v_array.at(i_v4).z());
+        }
+        else {
+            v4.setX(0.0f);
+            v4.setY(0.0f);
+            v4.setZ(0.0f);
+        }
+
+        QVector3D v_new = (3*(v1+v2) + 1*(v3+v4)) / 8;
+
+        model->v_array.push_back(v_new);
+        unsigned int i_v_new = model->v_array.size()-1;
+        current->child1 = new Edge(QVector2D(current->data.x(), i_v_new));
+        current->child2 = new Edge(QVector2D(i_v_new, current->data.y()));
+        current->child1->parent = current;
+        current->child2->parent = current;
+        current->vi = i_v_new;
+        current->flag = SUBDIVIDED;
+
+        if (current->reverse != NULL) {
+            current->reverse->child1 = new Edge(QVector2D(current->reverse->data.x(), i_v_new));
+            current->reverse->child2 = new Edge(QVector2D(i_v_new, current->reverse->data.y()));
+            current->child1->reverse = current->reverse->child2;
+            current->reverse->child2->reverse = current->child1;
+            current->child2->reverse = current->reverse->child1;
+            current->reverse->child1->reverse = current->child2;
+            current->reverse->child1->parent = current->reverse;
+            current->reverse->child2->parent = current->reverse;
+            current->reverse->flag = SUBDIVIDED;
+        }
+    }
+}
 
 void MeshDispose::face_subdivide_to_four(Face * &current, HalfEdge * &halfEdge, Model * &model)
 {

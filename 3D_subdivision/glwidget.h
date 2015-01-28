@@ -32,6 +32,7 @@ public slots:
     void openFile();
 
     void subdivideButterfly();
+    void subdivideLoopRevision();
 
 protected:
     void initializeGL();

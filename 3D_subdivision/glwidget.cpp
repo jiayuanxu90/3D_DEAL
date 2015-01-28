@@ -114,6 +114,17 @@ void GLWidget::subdivideButterfly()
     }
 }
 
+void GLWidget::subdivideLoopRevision()
+{
+    if (model == NULL) {
+        QMessageBox::about(this, "Message", "Please choose a mesh first...");
+    }
+    else {
+        mesh_dispose->subdivision_loop_revision(halfEdge, model);
+        updateGL();
+    }
+}
+
 QSize GLWidget::minimumSizeHint() const
 {
     return QSize(50, 50);

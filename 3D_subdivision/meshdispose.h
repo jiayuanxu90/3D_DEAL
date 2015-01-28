@@ -10,7 +10,11 @@ public:
     MeshDispose();
 
     bool subdivision_butterfly(HalfEdge * &halfEdge, Model * &model);
-    void edge_subdivide(Edge * &current, Model * &model);
+    bool subdivision_loop_revision(HalfEdge * &halfEdge, Model * &model);
+
+private:
+    void edge_subdivide_butterfly(Edge * &current, Model * &model);
+    void edge_subdivide_loop_revision(Edge * &current, Model * &model);
     void face_subdivide_to_four(Face *&current, HalfEdge *&halfEdge, Model *&model);
     void clean_parent_faces(HalfEdge * &halfEdge, int origin_size);
 };
