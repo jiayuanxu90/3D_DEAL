@@ -29,7 +29,7 @@ GLWidget::GLWidget(QWidget * parent) :
 
     setMinimumSize(400, 400);
 
-    model = NULL;
+    //model = NULL;
     halfEdge = NULL;
 
     mesh_dispose = new MeshDispose();
@@ -105,22 +105,52 @@ void GLWidget::openFile()
 
 void GLWidget::subdivideButterfly()
 {
-    if (model == NULL) {
+    if (halfEdge->is_empty()) {
         QMessageBox::about(this, "Message", "Please choose a mesh first...");
     }
     else {
-        mesh_dispose->subdivision_butterfly(halfEdge, model);
+        mesh_dispose->subdivision_butterfly(halfEdge);
+        halfEdge->set_poroperties();
+        halfEdge->normalize_for_paint();
         updateGL();
     }
 }
 
 void GLWidget::subdivideLoopRevision()
 {
-    if (model == NULL) {
+    if (halfEdge->is_empty()) {
         QMessageBox::about(this, "Message", "Please choose a mesh first...");
     }
     else {
-        mesh_dispose->subdivision_loop_revision(halfEdge, model);
+        mesh_dispose->subdivision_loop_revision(halfEdge);
+        halfEdge->set_poroperties();
+        halfEdge->normalize_for_paint();
+        updateGL();
+    }
+}
+
+
+void GLWidget::partition()
+{
+    if (halfEdge->is_empty()) {
+        QMessageBox::about(this, "Message", "Please choose a mesh first...");
+    }
+    else {
+        mesh_dispose->partition(halfEdge);
+        updateGL();
+    }
+
+}
+
+void GLWidget::reverseSubdivideLoop()
+{
+    if (halfEdge->is_empty()) {
+        QMessageBox::about(this, "Message", "Please choose a mesh first...");
+    }
+    else {
+        mesh_dispose->reverse_subdivision(halfEdge, 0);
+        halfEdge->set_poroperties();
+        halfEdge->normalize_for_paint();
         updateGL();
     }
 }
@@ -159,15 +189,15 @@ void GLWidget::paintGL()
     GLfloat range = 0.0f;
 
     glLoadIdentity();
-    if (model==NULL || model->empty()) {
+    if (halfEdge==NULL || halfEdge->is_empty()) {
         range = 0.0f;
     } else {
-        range = model->range;
+        range = halfEdge->range;
     }
     if (range == 0.0f) {
         glTranslatef(0.0f, 0.0f, -1.0f);
     } else {
-        glTranslatef(-model->x_trans/range, -model->y_trans/range, -model->z_trans/range-1.0);
+        glTranslatef(-halfEdge->x_trans/range, -halfEdge->y_trans/range, -halfEdge->z_trans/range-1.0);
     }
 
 
@@ -178,18 +208,55 @@ void GLWidget::paintGL()
     glScalef(m_fScale, m_fScale, m_fScale);
 
 
-    if (model!=NULL && !model->empty()) {
+    if (!halfEdge->is_empty()) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBegin(GL_TRIANGLES);
-        for (int i=0; i<model->node_size(); ++i) {
+        Face * face_current = halfEdge->get_face_first();
+        //int i = 0;
+        glColor3f(1.0f, 1.0f, 1.0f);
+        while (face_current != halfEdge->get_face_front()) {
+            glVertex3f(face_current->e1->vertex1->coordinate_normalized.x(),
+                       face_current->e1->vertex1->coordinate_normalized.y(),
+                       face_current->e1->vertex1->coordinate_normalized.z());
+            glVertex3f(face_current->e2->vertex1->coordinate_normalized.x(),
+                       face_current->e2->vertex1->coordinate_normalized.y(),
+                       face_current->e2->vertex1->coordinate_normalized.z());
+            glVertex3f(face_current->e3->vertex1->coordinate_normalized.x(),
+                       face_current->e3->vertex1->coordinate_normalized.y(),
+                       face_current->e3->vertex1->coordinate_normalized.z());
+            face_current = face_current->next;
+            //i++;
+            //qDebug() << i;
+        }
+//        for (int i=0; i<model->node_size(); ++i) {
 //            if (!model->normal_indices.empty() && model->normal_indices.size()!=0) {
 //                glNormal3f(model->vn_array.at(model->normal_indices.at(i)).x(),
 //                           model->vn_array.at(model->normal_indices.at(i)).y(),
 //                           model->vn_array.at(model->normal_indices.at(i)).z());
 //            }
-            glVertex3f(model->v_array.at(model->vertex_indices.at(i)).x(),
-                       model->v_array.at(model->vertex_indices.at(i)).y(),
-                       model->v_array.at(model->vertex_indices.at(i)).z());
+//            glVertex3f(model->v_array.at(model->vertex_indices.at(i)).x(),
+//                       model->v_array.at(model->vertex_indices.at(i)).y(),
+//                       model->v_array.at(model->vertex_indices.at(i)).z());
+//        }
+        glEnd();
+
+        glPointSize(5.0f);
+        glBegin(GL_POINTS);
+        Vertex * vtx_current = halfEdge->get_vertex_first();
+        while (vtx_current != halfEdge->get_vertex_front()) {
+            if (vtx_current->isOod()) {
+                glColor3f(1.0f, 0.0f, 0.0f);
+                glVertex3f(vtx_current->coordinate_normalized.x(),
+                           vtx_current->coordinate_normalized.y(),
+                           vtx_current->coordinate_normalized.z());
+            }
+            else if (vtx_current->isEven()) {
+                glColor3f(0.0f, 1.0f, 0.0f);
+                glVertex3f(vtx_current->coordinate_normalized.x(),
+                           vtx_current->coordinate_normalized.y(),
+                           vtx_current->coordinate_normalized.z());
+            }
+            vtx_current = vtx_current->next;
         }
         glEnd();
 
@@ -216,29 +283,41 @@ void GLWidget::resizeGL(int width, int height)
 void GLWidget::makeObject(QString filename)
 {
     if (filename.endsWith(".obj")) {
-        if (model != NULL) {
-            model->~Model();
-            model = NULL;
+        if (!halfEdge->is_empty()) {
+            halfEdge->~HalfEdge();
+            vtx_list.clear();
+            halfEdge = NULL;
         }
-        file_dispose = new FDObj(filename, model);
+
+        halfEdge = new HalfEdge();
+        vtx_list.push_back(halfEdge->get_vertex_front());
+        file_dispose = new FDObj(filename, halfEdge, vtx_list);
+
+
+        halfEdge->construct_halfedge_sturcture(file_dispose->vertex_indices, vtx_list);
+
+        halfEdge->set_poroperties();
+        halfEdge->normalize_for_paint();
+
     }
     else if (filename.endsWith(".ply")) {
-        if (model != NULL) {
-            model->~Model();
-            model = NULL;
+        if (!halfEdge->is_empty()) {
+            halfEdge->~HalfEdge();
+            vtx_list.clear();
+            halfEdge = NULL;
         }
-        file_dispose = new FDPly(filename, model);
+
+        halfEdge = new HalfEdge();
+        vtx_list.push_back(halfEdge->get_vertex_front());
+        file_dispose = new FDPly(filename, halfEdge, vtx_list);
+
+        halfEdge->construct_halfedge_sturcture(file_dispose->vertex_indices, vtx_list);
+        halfEdge->set_poroperties();
+        halfEdge->normalize_for_paint();
     }
     else {
         QMessageBox::about(this, "Message", "This format is not supported! Please try again...");
     }
-
-    if (halfEdge != NULL) {
-        halfEdge->~HalfEdge();
-    }
-    halfEdge = new HalfEdge();
-    halfEdge->construct_halfedge_sturcture(model->vertex_indices);
-
 }
 
 

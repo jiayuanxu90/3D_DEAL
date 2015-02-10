@@ -5,7 +5,7 @@
 #include "filedispose.h"
 #include "model.h"
 
-FDPly::FDPly(QString str, Model * &model) : FileDispose()
+FDPly::FDPly(QString str, HalfEdge *&halfEdge, QVector<Vertex *> &vtx_list) : FileDispose()
 {
     property_cursor = 1;
 
@@ -25,7 +25,7 @@ FDPly::FDPly(QString str, Model * &model) : FileDispose()
 
     f_cnt = 0;
 
-    read_file(str, model);
+    read_file(str, halfEdge, vtx_list);
 }
 
 FDPly::~FDPly()
@@ -33,7 +33,7 @@ FDPly::~FDPly()
 
 }
 
-bool FDPly::read_file(QString str, Model * &model)
+bool FDPly::read_file(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list)
 {
     QFile file(str);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -42,17 +42,17 @@ bool FDPly::read_file(QString str, Model * &model)
         return false;
     }
     else {
-        model = new Model();
+        //halfEdge = new HalfEdge();
         QTextStream infile(&file);
 
         deal_with_head(infile);
 
-        deal_with_vertices(infile, model);
+        //QVector<Vertex *> vtx_list;
+        //vtx_list.push_back(halfEdge->get_vertex_fornt());
 
-        deal_with_faces(infile, model);
+        deal_with_vertices(infile, halfEdge, vtx_list);
 
-        model->set_poroperties();
-        model->normalize_for_paint();
+        deal_with_faces(infile);
 
         return true;
     }
@@ -127,7 +127,7 @@ void FDPly::deal_with_head(QTextStream &infile)
 
 }
 
-void FDPly::deal_with_vertices(QTextStream &infile, Model * &model)
+void FDPly::deal_with_vertices(QTextStream &infile, HalfEdge *&halfEdge, QVector<Vertex *> &vtx_list)
 {
     for (unsigned int i=0; i<v_cnt; ++i) {
         QString line = infile.readLine();
@@ -137,22 +137,26 @@ void FDPly::deal_with_vertices(QTextStream &infile, Model * &model)
                     y = 0.0f,
                     z = 0.0f;
             sin >> x >> y >> z;
-            model->add_vertex(x, y, z);
+            // -------------------------------------------------
+            // -------------------------------------------------
+            Vertex * vtx_new = new Vertex(halfEdge->get_vertex_size()+1, x, y, z);
+            halfEdge->add_vertex(vtx_new);
+            vtx_list.push_back(vtx_new);
         }
-        if (vertex_rgb_on) {
-            GLint red = 255,
-                green = 255,
-                blue = 255;
-            sin >> red >> green >> blue;
-            model->add_vertex_rgb(red, green, blue);
-        }
-        if (vertex_vn_on) {
-            GLfloat x = 0.0f,
-                    y = 0.0f,
-                    z = 0.0f;
-            sin >> x >> y >> z;
-            model->add_vertex_normal(x, y, z);
-        }
+//        if (vertex_rgb_on) {
+//            GLint red = 255,
+//                green = 255,
+//                blue = 255;
+//            sin >> red >> green >> blue;
+//            //halfEdge->add_vertex_rgb(red, green, blue);
+//        }
+//        if (vertex_vn_on) {
+//            GLfloat x = 0.0f,
+//                    y = 0.0f,
+//                    z = 0.0f;
+//            sin >> x >> y >> z;
+//            //halfEdge->add_vertex_normal(x, y, z);
+//        }
 
         // -----------------------------------------
         // intensity and confidence will be add here
@@ -161,7 +165,7 @@ void FDPly::deal_with_vertices(QTextStream &infile, Model * &model)
     }
 }
 
-void FDPly::deal_with_faces(QTextStream &infile, Model *&model)
+void FDPly::deal_with_faces(QTextStream &infile)
 {
     for (unsigned int i=0; i<f_cnt; ++i) {
         QString line = infile.readLine();
@@ -177,11 +181,11 @@ void FDPly::deal_with_faces(QTextStream &infile, Model *&model)
                 unsigned int a = 0;
                 sin >> a;
                 if (vertex_v_on)
-                    model->add_v_index(a+1);
-                if (vertex_rgb_on)
-                    model->add_vrgb_index(a+1);
-                if (vertex_vn_on)
-                    model->add_n_index(a+1);
+                    vertex_indices.push_back(a+1);
+//                if (vertex_rgb_on)
+//                    halfEdge->add_vrgb_index(a+1);
+//                if (vertex_vn_on)
+//                    halfEdge->add_n_index(a+1);
             }
         }
     }

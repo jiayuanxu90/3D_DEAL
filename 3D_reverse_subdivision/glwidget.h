@@ -34,6 +34,9 @@ public slots:
     void subdivideButterfly();
     void subdivideLoopRevision();
 
+    void reverseSubdivideLoop();
+    void partition();
+
 protected:
     void initializeGL();
     void paintGL();
@@ -53,9 +56,10 @@ private:
     QColor qtPurple;
 
     //ModelIntf * model_intf;
-    Model * model;
+    //Model * model;
     FileDispose * file_dispose;
 
+    QVector<Vertex *> vtx_list;
     HalfEdge * halfEdge;
 
     MeshDispose * mesh_dispose;

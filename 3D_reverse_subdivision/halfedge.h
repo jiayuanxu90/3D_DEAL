@@ -3,7 +3,9 @@
 
 #include <QVector>
 #include <QVector2D>
+#include <QVector3D>
 #include <QDebug>
+#include <QtOpenGL>
 
 #define UNSUBDIVIDED 0
 #define SUBDIVIDED 1
@@ -20,31 +22,103 @@ class Edge;
 
 class Vertex {
 public:
-    QVector<Edge *> edge_list;
+//    QVector<Edge *> edge_list;
+    QVector<Edge *> edge_list_out;
+    QVector<Edge *> edge_list_in;
     unsigned int v_index;
+    QVector3D coordinate;
+    QVector3D coordinate_normalized;
+    Vertex * prev;
+    Vertex * next;
 //    unsigned int flag;
     unsigned int partion;
 
     Vertex() {
         v_index = 0;
-//        flag = IS_NOT_SIGULAR;
+        coordinate.setX(0.0f);
+        coordinate.setY(0.0f);
+        coordinate.setZ(0.0f);
+        coordinate_normalized.setX(0.0f);
+        coordinate_normalized.setY(0.0f);
+        coordinate_normalized.setZ(0.0f);
+        prev = NULL;
+        next = NULL;
         partion = UNPARTED;
     }
 
     Vertex(const unsigned int v_index0) {
         v_index = v_index0;
+        coordinate.setX(0.0f);
+        coordinate.setY(0.0f);
+        coordinate.setZ(0.0f);
+        coordinate_normalized.setX(0.0f);
+        coordinate_normalized.setY(0.0f);
+        coordinate_normalized.setZ(0.0f);
+        prev = NULL;
+        next = NULL;
+        partion = UNPARTED;
+    }
+
+    Vertex(const unsigned int v_index0, const GLfloat x, const GLfloat y, const GLfloat z) {
+        v_index = v_index0;
+        coordinate.setX(x);
+        coordinate.setY(y);
+        coordinate.setZ(z);
+        coordinate_normalized.setX(0.0f);
+        coordinate_normalized.setY(0.0f);
+        coordinate_normalized.setZ(0.0f);
+        prev = NULL;
+        next = NULL;
+        partion = UNPARTED;
+    }
+
+    Vertex(const GLfloat x, const GLfloat y, const GLfloat z) {
+        coordinate.setX(x);
+        coordinate.setY(y);
+        coordinate.setZ(z);
+        coordinate_normalized.setX(0.0f);
+        coordinate_normalized.setY(0.0f);
+        coordinate_normalized.setZ(0.0f);
+        prev = NULL;
+        next = NULL;
+        partion = UNPARTED;
+    }
+
+    Vertex(const QVector3D coordinate0) {
+        coordinate.setX(coordinate0.x());
+        coordinate.setY(coordinate0.y());
+        coordinate.setZ(coordinate0.z());
+        coordinate_normalized.setX(0.0f);
+        coordinate_normalized.setY(0.0f);
+        coordinate_normalized.setZ(0.0f);
+        prev = NULL;
+        next = NULL;
         partion = UNPARTED;
     }
 
     Vertex(const Vertex & vertex) {
         v_index = vertex.v_index;
-        edge_list = vertex.edge_list;
+        edge_list_in = vertex.edge_list_in;
+        edge_list_out = vertex.edge_list_out;
+        coordinate = vertex.coordinate;
+        coordinate_normalized = vertex.coordinate_normalized;
+        prev = vertex.prev;
+        next = vertex.next;
         partion = vertex.partion;
     }
 
     ~Vertex() {
-        edge_list.clear();
+        edge_list_in.clear();
+        edge_list_out.clear();
         v_index = 0;
+        coordinate.setX(0.0f);
+        coordinate.setY(0.0f);
+        coordinate.setZ(0.0f);
+        coordinate_normalized.setX(0.0f);
+        coordinate_normalized.setY(0.0f);
+        coordinate_normalized.setZ(0.0f);
+        prev = NULL;
+        next = NULL;
         partion = UNPARTED;
     }
 
@@ -64,16 +138,41 @@ public:
     }
 
     bool isSingular() const {
-        return (edge_list.size() != 6);
+        return (edge_list_in.size() != 6);
     }
 
-    bool addEdge(Edge * &edge) {
-        edge_list.push_back(edge);
+//    bool addEdge(Edge * &edge) {
+//        edge_list.push_back(edge);
+//    }
+
+    void add_edge_in(Edge * edge) {
+        edge_list_in.push_back(edge);
+    }
+
+    void add_edge_out(Edge * edge) {
+        edge_list_out.push_back(edge);
     }
 
     bool isEqual(Vertex * const &vertex) const {
         return (v_index == vertex->v_index);
     }
+
+    void set_even() {
+        partion = EVEN;
+    }
+
+    void set_ood() {
+        partion = OOD;
+    }
+
+    void  set_unparted() {
+        partion = UNPARTED;
+    }
+
+    bool isZero() const {
+        return (coordinate.x()==0.0f && coordinate.y()==0.0f && coordinate.z()==0.0f);
+    }
+
 };
 
 class Edge {
@@ -93,8 +192,9 @@ public:
     Edge * reverse;
 
     // 4. parent edge
-    // when butterfly subdivide mesh, one edge will be divided to two, both parent edge points to the origin edge.
+    // when reverse-subdivide mesh, two edges will be merged to two, both child edges points to the origin edge.
     Edge * parent;
+    QVector3D error;
 
     // 5. child edges
     // when buttrtfly subdivide mesh, the origin edge points to the two child edges.
@@ -106,7 +206,8 @@ public:
 
     // --- if the edge is be subdivided, the new vertex will be insert into the vertex list, and
     // --- the vertex index will be added into the slot;
-    unsigned int vi;
+//    unsigned int vi;
+    Vertex * vtx_in;
 
     // Pointer point to the Face
     Face * face;
@@ -126,7 +227,10 @@ public:
         parent = NULL;
         child1 = NULL;
         child2 = NULL;
-        vi = 0;
+        vtx_in = NULL;
+        error.setX(0.0);
+        error.setY(0.0);
+        error.setZ(0.0);
     }
     Edge(Vertex * &v1, Vertex * &v2) {
         vertex1 = v1;
@@ -139,13 +243,32 @@ public:
         parent = NULL;
         child1 = NULL;
         child2 = NULL;
-        vi = 0;
-        vertex1->edge_list.push_back(this);
+        vtx_in = NULL;
+//        vertex1->edge_list.push_back(this);
+        //vertex1->add_edge_out(this);
+        //vertex2->add_edge_in(this);
+        error.setX(0.0);
+        error.setY(0.0);
+        error.setZ(0.0);
     }
     Edge(const QVector2D data) {
         vertex1 = new Vertex(data.x());
         vertex2 = new Vertex(data.y());
-        vertex1->edge_list.push_back(this);
+        prev = NULL;
+        next = NULL;
+        reverse = NULL;
+        flag = UNSUBDIVIDED;
+        face = NULL;
+        parent = NULL;
+        child1 = NULL;
+        child2 = NULL;
+        vtx_in = NULL;
+//        vertex1->edge_list.push_back(this);
+        //vertex1->add_edge_out(this);
+        //vertex2->add_edge_in(this);
+        error.setX(0.0);
+        error.setY(0.0);
+        error.setZ(0.0);
     }
 
     Edge(const Edge & edge) {
@@ -159,7 +282,8 @@ public:
         parent = edge.parent;
         child1 = edge.child1;
         child2 = edge.child2;
-        vi = edge.vi;
+        vtx_in = edge.vtx_in;
+        error = edge.error;
     }
     // [End of Edge()]
 
@@ -175,6 +299,7 @@ public:
         parent = NULL;
         child1 = NULL;
         child2 = NULL;
+        vtx_in = NULL;
     }
 
     // [End of ~Edge()]
@@ -200,6 +325,10 @@ public:
             return vertex2->v_index;
     }
 
+    void add_edge_to_vtx_list() {
+        vertex1->add_edge_out(this);
+        vertex2->add_edge_in(this);
+    }
 
     // ---
     // [Begin of print_for_debug()]
@@ -231,6 +360,22 @@ public:
         prev = NULL;
         next = NULL;
     }
+
+    Face(Edge * &e01, Edge * &e02, Edge * &e03) {
+        e1 = e01;
+        e2 = e02;
+        e3 = e03;
+        e1->next = e2;
+        e2->next = e3;
+        e3->next = e1;
+        e1->prev = e3;
+        e2->prev = e1;
+        e3->prev = e2;
+        e1->face = this;
+        e2->face = this;
+        e3->face = this;
+    }
+
     // [End of Face()]
 
     // ---
@@ -261,30 +406,52 @@ public:
 };
 class HalfEdge
 {
-    Face * front;
-    QVector<Vertex *> vertex_list;
-    int size;
+    Face * face_front;
+//    QVector<Vertex *> vtx_ptr_list;
+    int face_size;
+    Vertex * vtx_front;
+    int vtx_size;
+
 
 public:
+
+    GLfloat x_trans;
+    GLfloat y_trans;
+    GLfloat z_trans;
+    GLfloat range;
+
     HalfEdge();
     ~HalfEdge();
 
-    Face * get_front() const;
-    Face * get_first() const;
-    int get_size() const;
+    Face * get_face_front() const;
+    Face * get_face_first() const;
+    Vertex * get_vertex_front() const;
+    Vertex * get_vertex_first() const;
+    Vertex * get_vertex_extraordinary();
+    Vertex * get_unparted() const;
     int get_vertex_size() const;
     int get_face_size() const;
     bool is_empty() const;
 
-    bool construct_halfedge_sturcture(QVector<unsigned int> vi_array);
+    void set_poroperties();
+    void normalize_for_paint();
+
+    void clear_edges_of_vertex();
+
+    bool construct_halfedge_sturcture(QVector<unsigned int> &vi_array, QVector<Vertex *> &vtx_list);
     bool add_face(Face *&face);
     bool add_vertex(Vertex * &vertex);
-    bool do_with_reverse(QQueue<Edge *> & edge_queue, Edge * &edge, QVector<unsigned int> & vi_array);
+    Vertex * get_vertex(unsigned int vi);
+    bool do_with_reverse(QQueue<Edge *> & edge_queue, Edge * &edge, QVector<unsigned int> & vi_array, QVector<Vertex *> &vtx_list);
     bool search_in_queue(QQueue<Edge *> &edge_queue, Edge * &edge);
-    Face * search_in_viarray(QQueue<Edge *> &edge_queue, Edge * &edge, QVector<unsigned int> &vi_array);
-    Face * search_in_viarray_per(QQueue<Edge *> & edge_queue, Edge * &edge, QVector<unsigned int> &vi_array, int i);
-    void add_face_when_queue_is_null(QQueue<Edge *> &edge_queue, QVector<unsigned int> &vi_array);
+//    Vertex * search_in_queue(QQueue<Edge *> &edge_queue, unsigned int x, unsigned int y);
+    Face * search_in_viarray(QQueue<Edge *> &edge_queue, Edge * &edge, QVector<unsigned int> &vi_array, QVector<Vertex *> &vtx_list);
+    Face * search_in_viarray_per(QQueue<Edge *> & edge_queue, Edge * &edge, QVector<unsigned int> &vi_array, int i, QVector<Vertex *> &vtx_list);
+    void add_face_when_queue_is_null(QQueue<Edge *> &edge_queue, QVector<unsigned int> &vi_array, QVector<Vertex *> &vtx_list);
     bool delete_face_front();
+
+    bool delete_ood_vtx();
+    void update_vtx_index();
 
     void print_for_debug() const;
 };

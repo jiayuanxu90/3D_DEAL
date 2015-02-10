@@ -79,12 +79,17 @@ MainWindow::MainWindow()
     QAction * exit = new QAction("Exit", fileMenu);
     QAction * s_butterfly = new QAction("s_butterfly", opsMenu);
     QAction * s_loop_rv = new QAction("s_loop_rv", opsMenu);
+    QAction * rs_partition = new QAction("rs_part", opsMenu);
+    QAction * rs_loop = new QAction("rs_loop", opsMenu);
     QAction * aboutQt = new QAction("About", helpMenu);
 
     fileMenu->addAction(openFile);
     fileMenu->addAction(exit);
     opsMenu->addAction(s_butterfly);
     opsMenu->addAction(s_loop_rv);
+    opsMenu->addSeparator();
+    opsMenu->addAction(rs_partition);
+    opsMenu->addAction(rs_loop);
     helpMenu->addAction(aboutQt);
 
     QObject::connect(exit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -92,7 +97,8 @@ MainWindow::MainWindow()
     QObject::connect(openFile, SIGNAL(triggered(bool)), glwidget, SLOT(openFile()));
     QObject::connect(s_butterfly, SIGNAL(triggered(bool)), glwidget, SLOT(subdivideButterfly()));
     QObject::connect(s_loop_rv, SIGNAL(triggered(bool)), glwidget, SLOT(subdivideLoopRevision()));
-
+    QObject::connect(rs_partition, SIGNAL(triggered(bool)), glwidget, SLOT(partition()));
+    QObject::connect(rs_loop, SIGNAL(triggered(bool)), glwidget, SLOT(reverseSubdivideLoop()));
 
 
 

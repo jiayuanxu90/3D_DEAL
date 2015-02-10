@@ -2,9 +2,10 @@
 #define FDPLY_H
 
 #include <QTextStream>
+#include <QVector>
 
 #include "filedispose.h"
-#include "model.h"
+#include "halfedge.h"
 
 /**
  * @brief The PlyImpl class
@@ -42,9 +43,9 @@ class FDPly : public FileDispose
 {
 public:
 
-    bool read_file(QString str, Model *&model);
+    bool read_file(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list);
 
-    FDPly(QString str, Model * &model);
+    FDPly(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list);
     ~FDPly();
 
 private:
@@ -67,8 +68,8 @@ private:
     unsigned int f_cnt;
 
     void deal_with_head(QTextStream & infile);
-    void deal_with_vertices(QTextStream & infile, Model * &model);
-    void deal_with_faces(QTextStream & infile, Model * &model);
+    void deal_with_vertices(QTextStream & infile, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list);
+    void deal_with_faces(QTextStream & infile);
 
 
 };

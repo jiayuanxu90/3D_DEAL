@@ -4,9 +4,9 @@
 #include "filedispose.h"
 #include "model.h"
 
-FDObj::FDObj(QString str, Model * &model) : FileDispose()
+FDObj::FDObj(QString str, HalfEdge *&halfEdge, QVector<Vertex *> &vtx_list) : FileDispose()
 {
-    read_file(str, model);
+    read_file(str, halfEdge, vtx_list);
 }
 
 FDObj::~FDObj()
@@ -14,7 +14,7 @@ FDObj::~FDObj()
 }
 
 
-bool FDObj::read_file(QString str, Model * &model)
+bool FDObj::read_file(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list)
 {
     QFile file(str);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -23,7 +23,7 @@ bool FDObj::read_file(QString str, Model * &model)
         return false;
     }
     else {
-        model = new Model();
+        //model = new Model();
         QTextStream infile(&file);
         while (!infile.atEnd()) {
             QString line = infile.readLine();
@@ -31,21 +31,37 @@ bool FDObj::read_file(QString str, Model * &model)
             QString s;
             sin >> s;
             if (s == "v") {
-                deal_with_v(sin, model);
+                deal_with_v(sin, halfEdge, vtx_list);
             }
-            else if (s == "vt") {
-                deal_with_vt(sin, model);
-            }
-            else if (s == "vn") {
-                deal_with_vn(sin, model);
-            }
+//            else if (s == "vt") {
+                // --- do with the vt context
+                // it is not metioned in the research
+                //deal_with_vt(sin, halfEdge);
+//            }
+//            else if (s == "vn") {
+                  // --- the same as the 'vt'
+//                deal_with_vn(sin, halfEdge);
+//            }
             else if (s == "f") {
-                deal_with_f(sin, model);
+                deal_with_f(sin);
             }
         }
 
-        model->set_poroperties();
-        model->normalize_for_paint();
+        //qDebug() << "load file :" << vertex_indices.size();
+
+//        halfEdge->set_poroperties();
+//        halfEdge->normalize_for_paint();
+
+//        qDebug() << "load file: ";
+//        qDebug() << "vtx_size" << vtx_list.size();
+//        qDebug() << "half_edge vtx size: " << halfEdge->get_vertex_size();
+//        Vertex * vtx = halfEdge->get_vertex_first();
+//        for (int i=0; i<10; i++) {
+//            qDebug() << vtx->v_index;
+//            vtx = vtx->next;
+//        }
+
+//        halfEdge->construct_halfedge_sturcture(vertex_indices, vtx_list);
 
         return true;
     }
@@ -54,34 +70,37 @@ bool FDObj::read_file(QString str, Model * &model)
 
 
 
-void FDObj::deal_with_v(QTextStream &ts, Model * &model)
+void FDObj::deal_with_v(QTextStream &ts, HalfEdge* &halfEdge, QVector<Vertex *> &vtx_list)
 {
     GLfloat x = 0.0f,
             y = 0.0f,
             z = 0.0f;
     ts >> x >> y >> z;
-    model->add_vertex(x, y, z);
-}
-
-void FDObj::deal_with_vt(QTextStream &ts, Model * &model)
-{
-    GLfloat x = 0.0f,
-            y = 0.0f;
-    ts >> x >> y;
-    model->add_vertex_texture(x, y);
-}
-
-void FDObj::deal_with_vn(QTextStream &ts, Model * &model)
-{
-    GLfloat x = 0.0f,
-            y = 0.0f,
-            z = 0.0f;
-    ts >> x >> y >> z;
-    model->add_vertex_normal(x, y, z);
+    Vertex * vtx_new = new Vertex(halfEdge->get_vertex_size()+1, x, y, z);
+    halfEdge->add_vertex(vtx_new);
+    vtx_list.push_back(vtx_new);
 
 }
 
-void FDObj::deal_with_f(QTextStream &ts, Model * &model)
+//void FDObj::deal_with_vt(QTextStream &ts, HalfEdge *&halfEdge)
+//{
+//    GLfloat x = 0.0f,
+//            y = 0.0f;
+//    ts >> x >> y;
+//    halfEdge->add_vertex_texture(x, y);
+//}
+
+//void FDObj::deal_with_vn(QTextStream &ts, HalfEdge *&halfEdge)
+//{
+//    GLfloat x = 0.0f,
+//            y = 0.0f,
+//            z = 0.0f;
+//    ts >> x >> y >> z;
+//    halfEdge->add_vertex_normal(x, y, z);
+
+//}
+
+void FDObj::deal_with_f(QTextStream &ts)
 {
     // part into 4 following cases
     // 1. a
@@ -97,14 +116,14 @@ void FDObj::deal_with_f(QTextStream &ts, Model * &model)
             // There is no '/' in str
             // so, Case 1
             unsigned int a = str.toUInt();
-            model->add_v_index(a);
+            vertex_indices.push_back(a);
         }
         else {
             // There is a '/' in str or two
             // but, anyway, there have to be vertex indices
             // in the str, so put it into vertex index list
             unsigned int a = (str.mid(0, index)).toUInt();
-            model->add_v_index(a);
+            vertex_indices.push_back(a);
 
             // Cut str form the position of ('/'+1)
             // to get a new str
@@ -115,22 +134,22 @@ void FDObj::deal_with_f(QTextStream &ts, Model * &model)
                 // There is no '/' in the new str
                 // So, Case 2
                 unsigned int b = str.toUInt();
-                model->add_vt_index(b);
+                vt_indices.push_back(b);
             }
             else if (index == 0) {
                 // The new str is began with '/'
                 // So, Case 4
                 str = str.mid(index+1);
                 unsigned int c = str.toUInt();
-                model->add_n_index(c);
+                normal_indices.push_back(c);
             }
             else {
                 // Case 3:
                 unsigned int b = (str.mid(0, index)).toUInt();
-                model->add_vt_index(b);
+                vt_indices.push_back(b);
                 str = str.mid(index+1);
                 unsigned int c = str.toUInt();
-                model->add_n_index(c);
+                normal_indices.push_back(c);
             }
 
         }

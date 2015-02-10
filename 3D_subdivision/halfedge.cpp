@@ -58,6 +58,7 @@ bool HalfEdge::construct_halfedge_sturcture(QVector<unsigned int> vi_array)
 
     Edge * edge;
     while ((!edge_queue.isEmpty()) || vi_array.size()>0) {
+        qDebug() << "EDGE_QUEUE_SIZE: " << edge_queue.size();
         if (edge_queue.isEmpty()) {
             add_face_when_queue_is_null(edge_queue, vi_array);
         }
