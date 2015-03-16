@@ -1,5 +1,6 @@
 #include "fdobj.h"
 #include <QFile>
+#include <QDir>
 #include <QTextStream>
 #include "filedispose.h"
 #include "model.h"
@@ -46,22 +47,6 @@ bool FDObj::read_file(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_
                 deal_with_f(sin);
             }
         }
-
-        //qDebug() << "load file :" << vertex_indices.size();
-
-//        halfEdge->set_poroperties();
-//        halfEdge->normalize_for_paint();
-
-//        qDebug() << "load file: ";
-//        qDebug() << "vtx_size" << vtx_list.size();
-//        qDebug() << "half_edge vtx size: " << halfEdge->get_vertex_size();
-//        Vertex * vtx = halfEdge->get_vertex_first();
-//        for (int i=0; i<10; i++) {
-//            qDebug() << vtx->v_index;
-//            vtx = vtx->next;
-//        }
-
-//        halfEdge->construct_halfedge_sturcture(vertex_indices, vtx_list);
 
         return true;
     }
@@ -155,3 +140,185 @@ void FDObj::deal_with_f(QTextStream &ts)
         }
     }
 }
+
+
+bool FDObj::write_file(QString file_name, HalfEdge *&halfEdge, int level)
+{
+    int a = file_name.lastIndexOf('/');
+    QString path = file_name.mid(0, a+1);
+    QString name = file_name.mid(a+1);
+    int b = name.indexOf('_');
+    QString suffix;
+    if (b == -1) {
+        b = name.indexOf(".");
+        suffix = name.mid(b+1);
+        name = name.mid(0, b);
+    }
+    else {
+        int c = name.indexOf(".");
+        suffix = name.mid(c+1);
+        name = name.mid(0, b);
+    }
+
+    qDebug() << "path: " << path;
+    qDebug() << "name: " << name;
+    qDebug() << "suffix: " << suffix;
+    //name.append(QString::number(level));
+    //path = str + name;
+    //path.append(".obj");
+
+    if (level == -1) {
+        //name.append("_");
+        name.append(QString::number(00));
+        path.append(name);
+        return (write_origin(path.append(".obj"), halfEdge));
+    }
+
+    if (level == 0) {
+        qDebug() << "ppppppppppppppppppppppppppppppppp";
+        name.append("_");
+        name.append(QString::number(level));
+        path.append(name);
+        qDebug() << path;
+        QString path_origin;
+        path_origin += path + ".obj";
+        return (write_origin(path_origin, halfEdge));
+    }
+
+    if (level == 1) {
+        if (!pretreatment(path, name, suffix, halfEdge))
+            return false;
+        else {
+            name.append("_");
+            name.append(QString::number(level));
+            path.append(name);
+
+            QString path_origin;
+            path_origin += path + ".obj";
+            QString path_error;
+            path_error += path + ".err";
+            if (write_origin(path_origin, halfEdge))
+                return (write_error(path_error, halfEdge));
+            else
+                return false;
+
+        }
+    }
+
+
+    name.append("_");
+    name.append(QString::number(level));
+    path.append(name);
+
+    QString path_origin;
+    path_origin += path + ".obj";
+    QString path_error;
+    path_error += path + ".err";
+    if (write_origin(path_origin, halfEdge))
+        return (write_error(path_error, halfEdge));
+    else
+        return false;
+
+}
+
+bool FDObj::write_origin(QString path, HalfEdge *&halfEdge)
+{
+    QFile file(path);
+    if (file.open(QIODevice::Text | QIODevice::WriteOnly)) {
+        QTextStream out(&file);
+        Vertex * vtx = halfEdge->get_vertex_first();
+        while (vtx != halfEdge->get_vertex_front()) {
+            out << "v " << QString::number(vtx->coordinate.x()) << " "
+                << QString::number(vtx->coordinate.y()) << " " << QString::number(vtx->coordinate.z()) << endl;
+            vtx = vtx->next;
+        }
+        Face * face = halfEdge->get_face_first();
+        while (face != halfEdge->get_face_front()) {
+            out << "f " << face->e1->vertex1->v_index << " " << face->e2->vertex1->v_index
+                << " " << face->e3->vertex1->v_index << endl;
+            face = face->next;
+        }
+
+        file.close();
+        return true;
+    }
+    else {
+        qDebug() << "File open error...";
+        return false;
+    }
+
+}
+
+bool FDObj::write_error(QString path, HalfEdge *&halfEdge)
+{
+    QFile file(path);
+    if (file.open(QIODevice::Text | QIODevice::WriteOnly)) {
+        QTextStream out(&file);
+        Face * face = halfEdge->get_face_first();
+        while (face != halfEdge->get_face_front()) {
+            out << face->e1->vertex1->v_index << " " << face->e1->vertex2->v_index << " "
+                << face->e1->error.x() << " " << face->e1->error.y() << " " << face->e1->error.z() << endl;
+            out << face->e2->vertex1->v_index << " " << face->e2->vertex2->v_index << " "
+                << face->e2->error.x() << " " << face->e2->error.y() << " " << face->e2->error.z() << endl;
+            out << face->e1->vertex1->v_index << " " << face->e1->vertex2->v_index << " "
+                << face->e1->error.x() << " " << face->e1->error.y() << " " << face->e1->error.z() << endl;
+            face = face->next;
+        }
+        file.close();
+    }
+    else {
+        qDebug() << "File open error...";
+        return false;
+    }
+    return true;
+}
+
+bool FDObj::pretreatment(QString path, QString name, QString suffix, HalfEdge *&halfEdge)
+{
+    QDir dir(path);
+    if (!dir.exists()) {
+        qDebug() << "path not exsits...";
+        return false;
+    }
+
+    QString name_filter;
+    name_filter += name + "_*.*";
+    QStringList filters;
+    filters << QString(name_filter);
+
+    QDirIterator dir_iterator(path, filters,
+                              QDir::Files | QDir::NoSymLinks,
+                              QDirIterator::Subdirectories);
+    QStringList string_list;
+    while (dir_iterator.hasNext()) {
+        dir_iterator.next();
+        QFileInfo file_info = dir_iterator.fileInfo();
+        QString absolute_file_path = file_info.absoluteFilePath();
+        string_list.append(absolute_file_path);
+    }
+
+    // --- _0 not exist
+    QString _path0;
+    _path0 += path + name;
+    _path0 += "_0.obj";
+    qDebug() << _path0;
+    QFile _file0(_path0);
+    if (!_file0.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        write_file(_path0, halfEdge, 0);
+    }
+    else {
+        _file0.close();
+    }
+
+    // --- >_1 delete
+    for (int i=0; i<string_list.size(); ++i) {
+        if (string_list.at(i).compare(_path0) != 0) {
+            qDebug() << string_list.at(i);
+            QFile f(string_list.at(i));
+            f.remove();
+        }
+    }
+
+    return true;
+}
+

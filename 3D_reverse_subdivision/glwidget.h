@@ -30,6 +30,7 @@ public slots:
     void setZRotation(int angle);
 
     void openFile();
+    void saveAsObj();
 
     void subdivideButterfly();
     void subdivideLoopRevision();
@@ -58,6 +59,7 @@ private:
     //ModelIntf * model_intf;
     //Model * model;
     FileDispose * file_dispose;
+    QString file_name;
 
     QVector<Vertex *> vtx_list;
     HalfEdge * halfEdge;

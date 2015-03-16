@@ -103,6 +103,24 @@ void GLWidget::openFile()
 
 }
 
+void GLWidget::saveAsObj()
+{
+    if (halfEdge->is_empty()) {
+
+        QMessageBox::about(this, "Message", "Please choose a mesh first...");
+    }
+    else {
+        file_dispose->write_file(file_name, halfEdge, -1);
+
+//        qDebug() << "file_name: " << file_name;
+//        qDebug() << "path: " << path;
+//        qDebug() << "name: " << name;
+//        qDebug() << "suffix: " << suffix;
+
+    }
+
+}
+
 void GLWidget::subdivideButterfly()
 {
     if (halfEdge->is_empty()) {
@@ -151,6 +169,12 @@ void GLWidget::reverseSubdivideLoop()
         mesh_dispose->reverse_subdivision(halfEdge, 0);
         halfEdge->set_poroperties();
         halfEdge->normalize_for_paint();
+        
+        qDebug() << "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk";
+        qDebug() << file_name;
+
+        file_dispose->write_file(file_name, halfEdge, halfEdge->rs_times);
+
         updateGL();
     }
 }
@@ -289,6 +313,7 @@ void GLWidget::makeObject(QString filename)
             halfEdge = NULL;
         }
 
+        file_name = filename;
         halfEdge = new HalfEdge();
         vtx_list.push_back(halfEdge->get_vertex_front());
         file_dispose = new FDObj(filename, halfEdge, vtx_list);
@@ -307,6 +332,7 @@ void GLWidget::makeObject(QString filename)
             halfEdge = NULL;
         }
 
+        file_name = filename;
         halfEdge = new HalfEdge();
         vtx_list.push_back(halfEdge->get_vertex_front());
         file_dispose = new FDPly(filename, halfEdge, vtx_list);

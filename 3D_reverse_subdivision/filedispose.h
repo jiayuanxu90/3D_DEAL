@@ -15,6 +15,7 @@ public:
 
     //virtual bool read_file(QString str, Model * &model) = 0;
     virtual bool read_file(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list) = 0;
+    virtual bool write_file(QString file_name, HalfEdge * &halfEdge, int level=0) = 0;
 
     FileDispose();
     ~FileDispose();

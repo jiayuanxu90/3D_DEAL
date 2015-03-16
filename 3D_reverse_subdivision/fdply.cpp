@@ -190,3 +190,8 @@ void FDPly::deal_with_faces(QTextStream &infile)
         }
     }
 }
+
+bool FDPly::write_file(QString file_name, HalfEdge *&HalfEdge, int level)
+{
+    return false;
+}

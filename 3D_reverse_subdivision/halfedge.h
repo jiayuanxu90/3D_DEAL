@@ -13,6 +13,9 @@
 #define UNPARTED 2
 #define OOD 3
 #define EVEN 4
+
+#define OUTPUTED 5
+#define UNOUTPUTED 6
 //#define IS_SINAR 5
 //#define IS_NOT_SIGULAR 6
 
@@ -201,8 +204,11 @@ public:
     Edge * child1;
     Edge * child2;
 
-    // --- flag whether the edge is be subdivided or not
+    // --- flag whether the edge has been subdivided or not
     unsigned int flag;
+
+    // --- to discribe whether the edge has been outputed
+    unsigned int outputed;
 
     // --- if the edge is be subdivided, the new vertex will be insert into the vertex list, and
     // --- the vertex index will be added into the slot;
@@ -223,6 +229,7 @@ public:
         next = NULL;
         reverse = NULL;
         flag = UNSUBDIVIDED;
+        outputed = UNOUTPUTED;
         face = NULL;
         parent = NULL;
         child1 = NULL;
@@ -239,6 +246,7 @@ public:
         next = NULL;
         reverse = NULL;
         flag = UNSUBDIVIDED;
+        outputed = UNOUTPUTED;
         face = NULL;
         parent = NULL;
         child1 = NULL;
@@ -258,6 +266,7 @@ public:
         next = NULL;
         reverse = NULL;
         flag = UNSUBDIVIDED;
+        outputed = UNOUTPUTED;
         face = NULL;
         parent = NULL;
         child1 = NULL;
@@ -295,6 +304,7 @@ public:
         next = NULL;
         reverse = NULL;
         flag = UNSUBDIVIDED;
+        outputed = UNOUTPUTED;
         face = NULL;
         parent = NULL;
         child1 = NULL;
@@ -419,6 +429,7 @@ public:
     GLfloat y_trans;
     GLfloat z_trans;
     GLfloat range;
+    int rs_times;
 
     HalfEdge();
     ~HalfEdge();

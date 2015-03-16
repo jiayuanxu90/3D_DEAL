@@ -44,6 +44,7 @@ class FDPly : public FileDispose
 public:
 
     bool read_file(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list);
+    bool write_file(QString file_name, HalfEdge *&HalfEdge, int level);
 
     FDPly(QString str, HalfEdge * &halfEdge, QVector<Vertex *> &vtx_list);
     ~FDPly();

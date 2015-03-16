@@ -345,7 +345,7 @@ bool MeshDispose::reverse_subdivision_loop(HalfEdge *&halfEdge)
 
     if (partition(halfEdge)) {
 
-        qDebug() << "Partition successful ...!!!!";
+        //qDebug() << "Partition successful ...!!!!";
 
         halfEdge->clear_edges_of_vertex();
 
@@ -367,6 +367,8 @@ bool MeshDispose::reverse_subdivision_loop(HalfEdge *&halfEdge)
 
         // update the vertices' v_index
         halfEdge->update_vtx_index();
+
+        halfEdge->rs_times++;
     }
     else {
         flag = false;

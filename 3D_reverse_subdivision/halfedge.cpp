@@ -24,6 +24,8 @@ HalfEdge::HalfEdge()
     x_trans = 0.0f;
     y_trans = 0.0f;
     z_trans = 0.0f;
+
+    rs_times = 0;
 }
 
 HalfEdge::~HalfEdge()
@@ -46,6 +48,7 @@ HalfEdge::~HalfEdge()
         vtx_size--;
     }
     vtx_front = NULL;
+    rs_times = 0;
 }
 
 
@@ -78,8 +81,8 @@ Vertex * HalfEdge::get_vertex_extraordinary()
     while (current != get_vertex_front()) {
         if (current->edge_list_in.size()!=6 && current->edge_list_out.size()!=6 && (!current->isParted())) {
             vtx = current;
-            qDebug() << "current vtx edge_list size in: " << vtx->edge_list_in.size() << ", out: " <<
-                        vtx->edge_list_out.size();
+//            qDebug() << "current vtx edge_list size in: " << vtx->edge_list_in.size() << ", out: " <<
+//                        vtx->edge_list_out.size();
             break;
         }
         current = current->next;
