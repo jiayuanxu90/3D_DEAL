@@ -3,6 +3,10 @@
 #include <QtOpenGL>
 #include <QTime>
 
+//#include "fobj.h"
+#include <QFile>
+#include <QTextStream>
+
 Model::Model()
 {
     vertices.append(QVector3D(0, 0, 0));
@@ -17,12 +21,35 @@ Model::Model()
     list.push_back(QVector3D(1.0f, 0.0f, 0.0f));
     list.push_back(QVector3D(0.0f, 1.0f, 0.0f));
     list.push_back(QVector3D(0.0f, 0.0f, 1.0f));
-    list.push_back(QVector3D(1.0f, 1.0f, 0.0f));
-    list.push_back(QVector3D(1.0f, 0.0f, 1.0f));
-    list.push_back(QVector3D(0.0f, 1.0f, 1.0f));
+    list.push_back(QVector3D(1.0f, 0.5f, 0.0f));
+    list.push_back(QVector3D(0.9f, 0.0f, 0.4f));
+    list.push_back(QVector3D(0.0f, 0.8f, 0.8f));
     list.push_back(QVector3D(1.0f, 1.0f, 1.0f));
 
 }
+
+//Model::Model()
+//{
+//    vertices.append(QVector3D(0, 0, 0));
+//    vertices_normals.append(QVector3D(0, 0, 0));
+//    vertices_texture.append(QVector2D(0, 0));
+//    vertices_rgbs.append(QVector3D(0, 0, 0));
+//    range = 0.0f;
+//    x_trans = 0.0f;
+//    y_trans = 0.0f;
+//    z_trans = 0.0f;
+
+//    list.push_back(QVector3D(1.0f, 0.0f, 0.0f));
+//    list.push_back(QVector3D(0.0f, 1.0f, 0.0f));
+//    list.push_back(QVector3D(0.0f, 0.0f, 1.0f));
+//    list.push_back(QVector3D(1.0f, 0.5f, 0.0f));
+//    list.push_back(QVector3D(0.9f, 0.0f, 0.4f));
+//    list.push_back(QVector3D(0.0f, 0.8f, 0.8f));
+//    list.push_back(QVector3D(1.0f, 1.0f, 1.0f));
+
+////    file_dispose = new FObj(file_mame, &this);
+////    file_dispose->~FObj();
+//}
 
 Model::~Model()
 {
@@ -33,6 +60,7 @@ Model::~Model()
     vt_indices.clear();
     normal_indices.clear();
     vrgb_indices.clear();
+    list.clear();
 }
 
 bool Model::empty() const
@@ -41,6 +69,37 @@ bool Model::empty() const
         return true;
     }
     return false;
+}
+
+void Model::construct_form_file(QString file_name)
+{
+    QFile file(file_name);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "*** Can not open the file! File location is \""
+                 << file_name << "\" ***" << endl;
+        return;
+    }
+    else {
+        QTextStream infile(&file);
+        while (!infile.atEnd()) {
+            QString line = infile.readLine();
+            QTextStream sin(&line);
+            QString s;
+            sin >> s;
+            if (s == "v") {
+                deal_with_v_model(sin);
+            }
+            else if (s == "vt") {
+                deal_with_vt_model(sin);
+            }
+            else if (s == "vn") {
+                deal_with_vn_model(sin);
+            }
+            else if (s == "f") {
+                deal_with_f_model(sin);
+            }
+        }
+    }
 }
 
 int Model::node_size() const
@@ -237,7 +296,7 @@ void Model::display_for_test() const
     qDebug() << "range: " << range << endl;
 }
 
-void Model::draw(int xRot, int yRot, int zRot, int m_fScale) const
+void Model::draw(int xRot, int yRot, int zRot, GLfloat m_fScale) const
 {
     if (empty()) {
         glTranslatef(0.0f, 0.0f, -1.0f);
@@ -264,33 +323,27 @@ void Model::draw(int xRot, int yRot, int zRot, int m_fScale) const
                       list.at(face_color_list.at(j)).y(),
                       list.at(face_color_list.at(j)).z(), 0.0f);
             j++;
+
             glBegin(GL_TRIANGLES);
-            if (!normal_indices.empty() && normal_indices.size()!=0) {
-                glNormal3f(vn_array.at(normal_indices.at(i)).x(),
-                           vn_array.at(normal_indices.at(i)).y(),
-                           vn_array.at(normal_indices.at(i)).z());
-                glNormal3f(vn_array.at(normal_indices.at(i+1)).x(),
-                           vn_array.at(normal_indices.at(i+1)).y(),
-                           vn_array.at(normal_indices.at(i+1)).z());
-                glNormal3f(vn_array.at(normal_indices.at(i+2)).x(),
-                           vn_array.at(normal_indices.at(i+2)).y(),
-                           vn_array.at(normal_indices.at(i+2)).z());
+
+            for (int k=0; k<3; ++k) {
+                if (!normal_indices.empty() && normal_indices.size()!=0) {
+                    glNormal3f(vn_array.at(normal_indices.at(i+k)).x(),
+                           vn_array.at(normal_indices.at(i+k)).y(),
+                           vn_array.at(normal_indices.at(i+k)).z());
+                }
+
+                glVertex3f(v_array.at(vertex_indices.at(i+k)).x(),
+                       v_array.at(vertex_indices.at(i+k)).y(),
+                       v_array.at(vertex_indices.at(i+k)).z());
             }
-            glVertex3f(v_array.at(vertex_indices.at(i)).x(),
-                       v_array.at(vertex_indices.at(i)).y(),
-                       v_array.at(vertex_indices.at(i)).z());
-            glVertex3f(v_array.at(vertex_indices.at(i+1)).x(),
-                       v_array.at(vertex_indices.at(i+1)).y(),
-                       v_array.at(vertex_indices.at(i+1)).z());
-            glVertex3f(v_array.at(vertex_indices.at(i+2)).x(),
-                       v_array.at(vertex_indices.at(i+2)).y(),
-                       v_array.at(vertex_indices.at(i+2)).z());
+
             glEnd();
         }
 
 
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glColor4f(0.5f, 0.5f, 0.5f, 0.0f);
+        glColor4f(0.6f, 0.6f, 0.6f, 0.0f);
 
         for (int i=0; i<node_size(); i+=3) {
             glBegin(GL_LINE_LOOP);
@@ -308,4 +361,86 @@ void Model::draw(int xRot, int yRot, int zRot, int m_fScale) const
 
     }
 
+}
+
+void Model::deal_with_v_model(QTextStream &ts)
+{
+    GLfloat x = 0.0f,
+            y = 0.0f,
+            z = 0.0f;
+    ts >> x >> y >> z;
+    add_vertex(x, y, z);
+}
+
+void Model::deal_with_vt_model(QTextStream &ts)
+{
+    GLfloat x = 0.0f,
+            y = 0.0f;
+    ts >> x >> y;
+    add_vertex_texture(x, y);
+}
+
+void Model::deal_with_vn_model(QTextStream &ts)
+{
+    GLfloat x = 0.0f,
+            y = 0.0f,
+            z = 0.0f;
+    ts >> x >> y >> z;
+    add_vertex_normal(x, y, z);
+}
+
+void Model::deal_with_f_model(QTextStream &ts)
+{
+    // part into 4 following cases
+    // 1. a
+    // 2. a/b
+    // 3. a/b/c
+    // 4. a//c
+    for (int i=0; i<3; ++i) {
+        QString str;
+        ts >> str;
+        int index = str.indexOf('/');
+
+        if (index == -1) {
+            // There is no '/' in str
+            // so, Case 1
+            unsigned int a = str.toUInt();
+            add_v_index(a);
+        }
+        else {
+            // There is a '/' in str or two
+            // but, anyway, there have to be vertex indices
+            // in the str, so put it into vertex index list
+            unsigned int a = (str.mid(0, index)).toUInt();
+            add_v_index(a);
+
+            // Cut str form the position of ('/'+1)
+            // to get a new str
+            str = str.mid(index+1);
+            index = str.indexOf('/');
+
+            if (index == -1) {
+                // There is no '/' in the new str
+                // So, Case 2
+                unsigned int b = str.toUInt();
+                add_vt_index(b);
+            }
+            else if (index == 0) {
+                // The new str is began with '/'
+                // So, Case 4
+                str = str.mid(index+1);
+                unsigned int c = str.toUInt();
+                add_n_index(c);
+            }
+            else {
+                // Case 3:
+                unsigned int b = (str.mid(0, index)).toUInt();
+                add_vt_index(b);
+                str = str.mid(index+1);
+                unsigned int c = str.toUInt();
+                add_n_index(c);
+            }
+
+        }
+    }
 }

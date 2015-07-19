@@ -17,10 +17,12 @@ SOURCES += main.cpp\
     glwidget.cpp \
     filedispose.cpp \
     model.cpp \
-    fobj.cpp
+    fobj.cpp \
+    halfedge.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
     filedispose.h \
     model.h \
-    fobj.h
+    fobj.h \
+    halfedge.h

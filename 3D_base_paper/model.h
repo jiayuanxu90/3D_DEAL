@@ -4,7 +4,7 @@
 #include <QVector>
 #include <QtOpenGL>
 
-
+//#include"fobj.h"
 
 class Model
 {
@@ -28,7 +28,10 @@ public:
 
     QVector<unsigned int> vertex_indices, vt_indices, normal_indices, vrgb_indices;
 
+
+
     Model();
+//    Model(QString file_mame);
     ~Model();
 
     bool empty() const;
@@ -41,6 +44,8 @@ public:
     QVector3D add_vertex_normal(GLfloat x, GLfloat y, GLfloat z);
     QVector3D add_vertex_rgb(GLint x, GLint y, GLint z);
 
+    void construct_form_file(QString file_name);
+
     void set_poroperties();
     void normalize_for_paint();
 
@@ -50,7 +55,13 @@ public:
     void add_vrgb_index(unsigned int rgbi);
 
     void display_for_test() const;
-    void draw(int xRot, int yRot, int zRot, int m_fScale) const;
+    void draw(int xRot, int yRot, int zRot, GLfloat m_fScale) const;
+
+private:
+    void deal_with_v_model(QTextStream &ts);
+    void deal_with_vt_model(QTextStream &ts);
+    void deal_with_vn_model(QTextStream &ts);
+    void deal_with_f_model(QTextStream &ts);
 };
 
 #endif // MODEL_H
